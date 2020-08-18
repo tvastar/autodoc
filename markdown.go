@@ -95,18 +95,22 @@ func (m *Markdown) writeStructField(namePrefix string, f reflect.StructField) er
 
 	name := namePrefix + m.structFieldName(f, parts)
 	sType, err := m.structFieldType(f.Type, parts)
-	attribs := m.structFieldAttributes(contains(parts, "readonly"), contains(parts, "omitempty"))
-
 	if err != nil {
 		return err
 	}
 	description := m.structDescription(f)
-	if sType == "." || sType == "[]" {
-		// anonymous struct/array
+	attribs := m.structFieldAttributes(contains(parts, "readonly"), contains(parts, "omitempty"))
+
+	_, err = fmt.Fprintf(m.Writer, "| %s | %s %s | %s |\n", name, sType, attribs, description)
+	if err == nil && (sType == "Object" || sType == "Array") {
+		if sType == "Object" {
+			sType = "."
+		} else {
+			sType = "[]."
+		}
 		return m.writeStructFields(name+sType, f.Type)
 	}
 
-	_, err = fmt.Fprintf(m.Writer, "| %s | %s %s | %s |\n", name, sType, attribs, description)
 	return err
 }
 
@@ -127,7 +131,7 @@ func (m *Markdown) structFieldType(t reflect.Type, parts []string) (string, erro
 		reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
 		return "number", nil
 	case reflect.Array, reflect.Slice:
-		return "[]", nil
+		return "Array", nil
 		// case reflect.Interface TODO union types
 	case reflect.Ptr:
 		return m.structFieldType(t.Elem(), parts)
@@ -135,7 +139,7 @@ func (m *Markdown) structFieldType(t reflect.Type, parts []string) (string, erro
 		return "string", nil
 	case reflect.Struct:
 		if t.Name() == "" || contains(parts, "embed") {
-			return ".", nil
+			return "Object", nil
 		}
 		return t.Name(), nil
 	}
@@ -159,7 +163,7 @@ func (m *Markdown) structFieldAttributes(readonly, optional bool) string {
 }
 
 func (m *Markdown) structDescription(f reflect.StructField) string {
-	return ""
+	return f.Tag.Get("help")
 }
 
 func contains(array []string, element string) bool {

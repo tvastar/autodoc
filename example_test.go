@@ -25,12 +25,16 @@ func ExampleMarkdown_writeFieldType() {
 	}
 
 	err = md.WriteStructTable(&struct {
-		Hello  string
-		World  int
-		Nested *struct {
+		Hello string `help:"hello is a fine field"`
+		World int
+		Obj   *struct {
 			Hello uint
 			World string
-		}
+		} `help:"nested field"`
+		Array []struct {
+			Hello uint
+			World string
+		} `help:"array field"`
 	}{})
 	if err != nil {
 		fmt.Println("Got error", err)
@@ -47,10 +51,14 @@ func ExampleMarkdown_writeFieldType() {
 	// Output:
 	// | Field | Type | Description |
 	// | ----- | ---- | ----------- |
-	// | Hello | string  |  |
+	// | Hello | string  | hello is a fine field |
 	// | World | number  |  |
-	// | Nested.Hello | number  |  |
-	// | Nested.World | string  |  |
+	// | Obj | Object  | nested field |
+	// | Obj.Hello | number  |  |
+	// | Obj.World | string  |  |
+	// | Array | Array  | array field |
+	// | Array[].Hello | number  |  |
+	// | Array[].World | string  |  |
 }
 
 func ExampleMarkdown_transport() {

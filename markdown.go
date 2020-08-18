@@ -11,7 +11,7 @@ import (
 
 // NewMarkdown returns a new markdown instance
 func NewMarkdown(fname string) (*Markdown, error) {
-	w, err := os.OpenFile(fname, os.O_WRONLY, 0644)
+	w, err := os.Create(fname)
 	if err != nil {
 		return nil, err
 	}

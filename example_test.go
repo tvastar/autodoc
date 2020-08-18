@@ -24,6 +24,11 @@ func ExampleMarkdown_writeFieldType() {
 		return
 	}
 
+	if err = md.Para("# Example"); err != nil {
+		fmt.Println("Got error", err)
+		return
+	}
+
 	err = md.WriteStructTable(&struct {
 		Hello string `help:"hello is a fine field"`
 		World int
@@ -49,6 +54,8 @@ func ExampleMarkdown_writeFieldType() {
 	dumpFile(fname)
 
 	// Output:
+	// # Example
+	//
 	// | Field | Type | Description |
 	// | ----- | ---- | ----------- |
 	// | Hello | string  | hello is a fine field |

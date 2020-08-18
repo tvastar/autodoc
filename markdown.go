@@ -21,7 +21,6 @@ func NewMarkdown(fname string) (*Markdown, error) {
 // Markdown implements markdown documentation.
 type Markdown struct {
 	Writer io.WriteCloser
-	types  []reflect.Type
 }
 
 // Transport returns a http.RoundTripper that wraps the provided
@@ -32,13 +31,10 @@ func (m *Markdown) Transport(tr http.RoundTripper) *TransportMarkdownRecorder {
 	return &TransportMarkdownRecorder{Writer: m.Writer, Underlying: tr}
 }
 
-// RegisterType registers a concrete object type.
-//
-// This allows modeling a union type using an interface.
-func (m *Markdown) RegisterTypes(vs ...interface{}) {
-	for _, v := range vs {
-		m.types = append(m.types, reflect.TypeOf(v))
-	}
+// Para writes a paragraph.
+func (m *Markdown) Para(s string) error {
+	_, err := m.Writer.Write([]byte(s + "\n"))
+	return err
 }
 
 // WriteStructTable writes the description for a struct as a table.

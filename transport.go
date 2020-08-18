@@ -105,7 +105,7 @@ func (t *TransportMarkdownRecorder) recordRequest(f io.Writer, req *http.Request
 		return err
 	}
 
-	if _, err := fmt.Fprintf(f, "%s %s\n", req.Method, req.URL.RequestURI()); err != nil {
+	if _, err := fmt.Fprintf(f, "```\n%s %s\n", req.Method, req.URL.RequestURI()); err != nil {
 		return err
 	}
 
@@ -123,6 +123,10 @@ func (t *TransportMarkdownRecorder) recordRequest(f io.Writer, req *http.Request
 		return err
 	}
 
+	if _, err := f.Write([]byte("\n```\n")); err != nil {
+		return err
+	}
+
 	if _, err := f.Write([]byte(t.RequestPostamble)); err != nil {
 		return err
 	}
@@ -134,7 +138,7 @@ func (t *TransportMarkdownRecorder) recordResponse(f io.Writer, res *http.Respon
 		return err
 	}
 
-	if _, err := fmt.Fprintf(f, "%s %s\n", res.Proto, res.Status); err != nil {
+	if _, err := fmt.Fprintf(f, "```\n%s %s\n", res.Proto, res.Status); err != nil {
 		return err
 	}
 
@@ -149,6 +153,10 @@ func (t *TransportMarkdownRecorder) recordResponse(f io.Writer, res *http.Respon
 	}
 
 	if err := t.writeBody(f, &res.Body); err != nil {
+		return err
+	}
+
+	if _, err := f.Write([]byte("\n```\n")); err != nil {
 		return err
 	}
 

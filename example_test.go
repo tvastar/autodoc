@@ -91,8 +91,8 @@ func ExampleMarkdown_transport() {
 
 	transport := md.Transport(nil).
 		WithSkipHeaders("Date").
-		WithRequestInfo("## Request\n", "\nthat was the request\n").
-		WithResponseInfo("## Response\n", "\nthat was the response\n")
+		WithRequestInfo("## Request\n", "that was the request\n").
+		WithResponseInfo("## Response\n", "that was the response\n")
 	client := &http.Client{Transport: transport}
 	req, err := http.NewRequest("GET", server.URL+"/some_endpoint", strings.NewReader("some body"))
 	if err != nil {
@@ -114,17 +114,21 @@ func ExampleMarkdown_transport() {
 
 	// Output:
 	// ## Request
+	// ```
 	// GET /some_endpoint
 	// Content-Type: application/json;charset=utf8
 	//
 	// some body
+	// ```
 	// that was the request
 	// ## Response
+	// ```
 	// HTTP/1.1 200 OK
 	// Content-Length: 14
 	// Content-Type: application/json
 	//
 	// {"foo": "bar"}
+	// ```
 	// that was the response
 
 }

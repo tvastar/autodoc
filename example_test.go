@@ -29,15 +29,17 @@ func ExampleTransportMarkdownRecorder() {
 	}))
 	defer server.Close()
 
-	rec := &autodoc.TransportMarkdownRecorder{
-		MarkdownFileName:  fname,
-		SkipHeaders:       autodoc.SkipHeaders{"Date"},
-		RequestPreamble:   "## Request\n",
-		RequestPostamble:  "\nthat was the request\n",
-		ResponsePreamble:  "## Response\n",
-		ResponsePostamble: "\nthat was the response\n",
+	md, err := autodoc.NewMarkdown(fname)
+	if err != nil {
+		fmt.Println("Got error", err)
+		return
 	}
-	client := &http.Client{Transport: rec}
+
+	transport := md.Transport(nil).
+		WithSkipHeaders("Date").
+		WithRequestInfo("## Request\n", "\nthat was the request\n").
+		WithResponseInfo("## Response\n", "\nthat was the response\n")
+	client := &http.Client{Transport: transport}
 	req, err := http.NewRequest("GET", server.URL+"/some_endpoint", strings.NewReader("some body"))
 	if err != nil {
 		fmt.Println("Got error", err)
@@ -45,6 +47,11 @@ func ExampleTransportMarkdownRecorder() {
 	}
 	req.Header.Add("Content-Type", "application/json;charset=utf8")
 	if _, err2 := client.Do(req); err2 != nil {
+		fmt.Println("Got error", err2)
+		return
+	}
+
+	if err2 := md.Writer.Close(); err2 != nil {
 		fmt.Println("Got error", err2)
 		return
 	}

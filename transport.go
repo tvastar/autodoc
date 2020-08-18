@@ -5,7 +5,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 )
 
@@ -36,9 +35,8 @@ func (s SkipHeaders) SkipHeaders(header string, _ []string) bool {
 //
 // This implements the http.RoundTripper interface.
 type TransportMarkdownRecorder struct {
-	// MarkdownFileName is the file to append transport formatted
-	// info into.
-	MarkdownFileName string
+	// Writer is where the data is written to.
+	Writer io.Writer
 
 	// Underlying is the underlying transport.  If one is not
 	// provided, the default http transport is used.
@@ -65,14 +63,28 @@ type TransportMarkdownRecorder struct {
 	ResponsePostamble string
 }
 
-func (t *TransportMarkdownRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
-	file, err := os.OpenFile(t.MarkdownFileName, os.O_WRONLY|os.O_APPEND, 0644)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
+// WithRequestInfo updates the request preamble and postamble.
+func (t *TransportMarkdownRecorder) WithRequestInfo(preamble, postamble string) *TransportMarkdownRecorder {
+	t.RequestPreamble = preamble
+	t.RequestPostamble = postamble
+	return t
+}
 
-	if err := t.recordRequest(file, req); err != nil {
+// WithResponseInfo updates the response preamble and postamble.
+func (t *TransportMarkdownRecorder) WithResponseInfo(preamble, postamble string) *TransportMarkdownRecorder {
+	t.ResponsePreamble = preamble
+	t.ResponsePostamble = postamble
+	return t
+}
+
+// WithSkipHeaders setsup the static list of headers to skip.
+func (t *TransportMarkdownRecorder) WithSkipHeaders(skip ...string) *TransportMarkdownRecorder {
+	t.SkipHeaders = SkipHeaders(skip)
+	return t
+}
+
+func (t *TransportMarkdownRecorder) RoundTrip(req *http.Request) (*http.Response, error) {
+	if err := t.recordRequest(t.Writer, req); err != nil {
 		return nil, err
 	}
 
@@ -81,7 +93,7 @@ func (t *TransportMarkdownRecorder) RoundTrip(req *http.Request) (*http.Response
 		return nil, err
 	}
 
-	if err := t.recordResponse(file, resp); err != nil {
+	if err := t.recordResponse(t.Writer, resp); err != nil {
 		return nil, err
 	}
 

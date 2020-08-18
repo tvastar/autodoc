@@ -11,15 +11,54 @@ import (
 	"github.com/tvastar/autodoc"
 )
 
-func ExampleTransportMarkdownRecorder() {
-	f, err := ioutil.TempFile("", "autodoc")
+func ExampleMarkdown_writeFieldType() {
+	fname, cleanup, err := tempFile()
+	if err != nil {
+		return
+	}
+	defer cleanup()
+
+	md, err := autodoc.NewMarkdown(fname)
 	if err != nil {
 		fmt.Println("Got error", err)
 		return
 	}
-	defer os.Remove(f.Name())
-	fname := f.Name()
-	f.Close()
+
+	err = md.WriteStructTable(&struct {
+		Hello  string
+		World  int
+		Nested *struct {
+			Hello uint
+			World string
+		}
+	}{})
+	if err != nil {
+		fmt.Println("Got error", err)
+		return
+	}
+
+	if err2 := md.Writer.Close(); err2 != nil {
+		fmt.Println("Got error", err2)
+		return
+	}
+
+	dumpFile(fname)
+
+	// Output:
+	// | Field | Type | Description |
+	// | ----- | ---- | ----------- |
+	// | Hello | string  |  |
+	// | World | number  |  |
+	// | Nested.Hello | number  |  |
+	// | Nested.World | string  |  |
+}
+
+func ExampleMarkdown_transport() {
+	fname, cleanup, err := tempFile()
+	if err != nil {
+		return
+	}
+	defer cleanup()
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("content-type", "application/json")
@@ -56,12 +95,7 @@ func ExampleTransportMarkdownRecorder() {
 		return
 	}
 
-	data, err := ioutil.ReadFile(fname)
-	if err != nil {
-		fmt.Println("Got error", err)
-		return
-	}
-	fmt.Println(strings.ReplaceAll(string(data), "\r", "\n"))
+	dumpFile(fname)
 
 	// Output:
 	// ## Request
@@ -78,4 +112,25 @@ func ExampleTransportMarkdownRecorder() {
 	// {"foo": "bar"}
 	// that was the response
 
+}
+
+func tempFile() (string, func(), error) {
+	f, err := ioutil.TempFile("", "autodoc")
+	if err != nil {
+		fmt.Println("Got error", err)
+		return "", func() {}, err
+	}
+	name := f.Name()
+	f.Close()
+	return name, func() { os.Remove(name) }, nil
+}
+
+func dumpFile(fname string) {
+	data, err := ioutil.ReadFile(fname)
+	if err != nil {
+		fmt.Println("Got error", err)
+		return
+	}
+
+	fmt.Println(string(data))
 }
